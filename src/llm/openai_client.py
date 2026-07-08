@@ -15,11 +15,14 @@ if not os.getenv("OPENAI_API_KEY"):
 
 class OpenAIClient:
     def __init__(self, model: str = "gpt-5.4"):
+        # Store the model inside this class so other methods can use it.
         self.llm = ChatOpenAI(
             model=model,
+            # Use OpenAI's newer Responses API mode.
             use_responses_api=True,
         )
 
+    # This method sends a prompt to the agent and returns text.
     def ask(
         self,
         system_prompt: str,
@@ -29,13 +32,15 @@ class OpenAIClient:
         """
         Run one agent call and return the final text response.
         """
-
+        # This creates an agent.
         agent = create_agent(
             model=self.llm,
+            # If tools is provided, use it. If tools is None, use empty list [].
             tools=tools or [],
             system_prompt=system_prompt,
         )
 
+        # This runs the agent.
         result = agent.invoke(
             {
                 "messages": [
@@ -47,9 +52,12 @@ class OpenAIClient:
             }
         )
 
+        # the last message is the final answer from the AI.
         final_message = result["messages"][-1]
+        # This extracts clean text from that final AI message.
         return self._extract_text(final_message)
 
+    # This is like ask(), but it expects the model to return JSON.
     def ask_json(
         self,
         system_prompt: str,
@@ -68,6 +76,8 @@ class OpenAIClient:
 
         return self._parse_json(text)
 
+    # This method takes an AI message and returns plain text.
+    # Because LangChain/OpenAI responses can come in different shapes.
     def _extract_text(self, message: Any) -> str:
         """
         Handles normal AIMessage.content and Responses API content blocks.
@@ -98,6 +108,7 @@ class OpenAIClient:
 
         return str(content)
 
+    # This method converts model text into Python JSON/dict.
     def _parse_json(self, text: str) -> dict[str, Any]:
         """
         Parses strict JSON. Also cleans accidental ```json fences.

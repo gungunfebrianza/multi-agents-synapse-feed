@@ -1,8 +1,10 @@
+# This imports your custom class that talks to OpenAI/LangChain.
 from src.llm.openai_client import OpenAIClient
 
+# This creates one reusable OpenAI client.
 openai_client = OpenAIClient()
 
-
+# This tells the AI what role it should play.
 PLANNER_SYSTEM_PROMPT = """
 ROLE: You are the PLANNER agent.
 
@@ -20,13 +22,15 @@ Rules:
 - The JSON must match the requested structure exactly.
 """
 
-
+# This is a LangGraph node.
+# START → planner_node → browser_node → researcher_node → END
 def planner_node(state):
+    # The state is the shared data dictionary passed through the whole graph.
     row = state["row"]
 
     row_id = row["row_id"]
     keywords = row["keywords"]
-
+    # This creates the actual task for the Planner agent.
     user_prompt = f"""
 INPUT CSV ROW:
 row_id: {row_id}
@@ -72,7 +76,8 @@ OUTPUT JSON ONLY:
   }}
 }}
 """
-
+    # This sends the prompt to the OpenAI client and gets back JSON.
+    # This sends both prompts to the model.
     planner_output = openai_client.ask_json(
         system_prompt=PLANNER_SYSTEM_PROMPT,
         user_prompt=user_prompt,

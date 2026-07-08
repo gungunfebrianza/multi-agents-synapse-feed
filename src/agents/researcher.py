@@ -2,7 +2,7 @@ from src.llm.openai_client import OpenAIClient
 
 openai_client = OpenAIClient()
 
-
+# This is the identity and behavior instruction for the Researcher agent.
 RESEARCHER_SYSTEM_PROMPT = """
 ROLE: You are the RESEARCHER agent.
 
@@ -19,16 +19,20 @@ Rules:
 - Every keyword must be structurally essential.
 """
 
-
+# This function is one LangGraph node.
+# LangGraph will call it after the Browser node finishes.
 def researcher_node(state):
+    # This takes previous results from the shared LangGraph state.
     planner_output = state["planner_output"]
     browser_output = state["browser_output"]
 
+    # This pulls out the exact data the Researcher needs.
     keywords = planner_output["keywords"]
     pattern = planner_output["pattern"]
     pattern_reason = planner_output["pattern_reason"]
     facts = browser_output["facts"]
 
+# This creates the actual task message sent to the model.
     user_prompt = f"""
 INPUT:
 keywords: {keywords}
@@ -73,6 +77,8 @@ Failure mode:
 Open question:
 ...
 """
+# Dynamic keyword names in the output format
+# This means the prompt will automatically insert the actual keywords.
 
     article = openai_client.ask(
         system_prompt=RESEARCHER_SYSTEM_PROMPT,
