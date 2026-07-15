@@ -76,3 +76,28 @@ All notable changes to this project are documented in this file.
   project.
 - `learn-lesson.md` — an educational write-up on how prompt injection can
   attack this multi-agent pipeline specifically, with worked examples.
+
+## [Unreleased] - 2026-07-15 (2)
+
+### Fixed
+
+- **Output files were silently overwritten on every run.** `main.py` named
+  articles `article_{row_id}.md`, so re-running the pipeline against the
+  same `keywords.csv` replaced every previous result. It now scans
+  `outputs/` for the highest existing `article_N.md` number at startup and
+  continues from `N + 1` for every article written during the run (e.g. if
+  `article_1.md` exists, the next generated file is `article_2.md`),
+  regardless of CSV `row_id`. The originating `row_id` is preserved as an
+  HTML comment on the first line of each generated file for traceability.
+  (`main.py`)
+
+### Added
+
+- **Live, per-stage progress output for `main.py`.** Running
+  `python main.py` previously printed nothing until each row's article was
+  fully written. It now uses the compiled graph's `stream(...,
+  stream_mode="updates")` API to print a row counter (`[2/5] Row 3 -
+  keywords: ...`), a label and elapsed time for each pipeline stage as it
+  completes (Planning / Browsing / Researching), a per-row failure message
+  if a stage fails, and a final summary line (`N succeeded, N failed,
+  total time`). (`main.py`)
