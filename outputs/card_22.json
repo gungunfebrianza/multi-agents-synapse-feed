@@ -1,0 +1,15 @@
+{
+  "row_id": "api-1e504eaf",
+  "keywords": [
+    "browser extension",
+    "security",
+    "smart contract"
+  ],
+  "pattern": "Adversarial Recombination",
+  "card": {
+    "hook": "A browser-side transaction firewall only holds if it combines three checks before wallet approval: opt-in tab-scoped inspection, origin/scam-risk signals, and independent smart-contract preflight plus verification. Drop any one of those pieces and a clean-looking site can still push a user toward signing an opaque or harmful contract call.",
+    "why_it_matters": "If you are learning to build browser-extension security for smart-contract flows, this gives you a concrete architecture for enforcing checks before the wallet becomes the first line of defense.",
+    "action": "Write a 3-step decision table in a local note or README with rows for origin risk, contract verification status, and eth_call/eth_estimateGas preflight result, and add a final allow/block rule for each failure case described in the article.",
+    "action_effort": "15min"
+  }
+}

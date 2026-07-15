@@ -1,0 +1,15 @@
+{
+  "row_id": "api-9313e610",
+  "keywords": [
+    "browser extension",
+    "security",
+    "smart contract"
+  ],
+  "pattern": "Adversarial Recombination",
+  "card": {
+    "hook": "A Web3 security extension that treats permit signatures as harmless signing, ignores ERC-1271 smart accounts, or only watches old proxy upgrade selectors will miss some of the highest-risk actions before wallet confirmation. MV3 makes this sharper: you cannot rely on remotely loaded logic or general blocking webRequest interception, so the classifier has to be packaged and contract-aware.",
+    "why_it_matters": "If you are learning to build browser-extension security for smart-contract flows, this defines the minimum risk model your first prototype needs to classify correctly.",
+    "action": "Write a one-page risk-spec note that lists exactly four event classes your extension will flag before wallet confirmation: ERC-20/ERC-721/ERC-1155 approvals including ERC-2612 permit, ERC-1271 signature validations, proxy admin changes, and proxy upgrade calls including upgradeToAndCall and upgradeAndCall.",
+    "action_effort": "15min"
+  }
+}

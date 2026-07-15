@@ -1,8 +1,17 @@
 # multi-agents-synapse-feed
 
-A three-agent LangGraph pipeline that turns a small set of keywords into a single, sourced, "recombination" article. For each row of an input CSV (a `row_id` and a comma-separated `keywords` string), the system normalizes the keywords, plans a synthesis pattern, gathers current facts from the web for each keyword, and then writes an article that forces all keywords into one interdependent idea, grounding every technical claim in a cited fact.
+A four-agent LangGraph pipeline that turns 3 keywords into a single,
+sourced "recombination" article plus a short, checkable action card. It can
+be run two ways:
 
-Each agent is a thin wrapper around a single OpenAI call (via LangChain's `create_agent`), and the three agents are wired together as nodes in a linear LangGraph graph. Generated articles are written to `outputs/article_<row_id>.md`.
+- **Batch, from a CSV** (`main.py`) — one row per article, written to `outputs/`.
+- **On demand, from a web UI** (`frontend/` + `src/api/app.py`) — a visitor
+  types 3 keywords into a doomscroll-style feed, which opens with every
+  card already generated so far and then keeps generating brand-new ones
+  as they scroll, via the FastAPI backend.
+
+Each agent is a thin wrapper around a single OpenAI call (via LangChain's
+`create_agent`), wired together as nodes in a LangGraph graph.
 
 ## Architecture
 
@@ -13,66 +22,73 @@ Each agent is a thin wrapper around a single OpenAI call (via LangChain's `creat
   1. Normalize the input into exactly 3 "load-bearing" keywords (adding related keywords with a stated rationale if fewer than 3 were given).
   2. Select one recombination pattern (e.g. "Triadic Fusion", "Constraint Collision", "Inversion", ...).
   3. Write one current, factual research question per keyword for the Browser agent.
-  Returns strict JSON as `planner_output`, and sets `status = "planned"`.
+  Returns strict JSON as `planner_output`, and sets `status = "planned"`. Fails the row (`status = "failed"`) instead of raising if the model doesn't return exactly 3 keywords.
 
 - **`browser.py` — `browser_node`**
   Reads `planner_output` (keywords, research questions). Calls the model with a `web_search` tool bound to it and instructs it to only retrieve and report facts — never synthesize or combine keywords. Returns 3-5 sourced facts (with `fact`, `source`, `confidence`) per keyword as strict JSON in `browser_output`, and sets `status = "browsed"`.
 
 - **`researcher.py` — `researcher_node`**
-  Reads `planner_output` (keywords, pattern, pattern_reason) and `browser_output` (facts). Prompts the model to apply the chosen recombination pattern, ground every technical claim in a provided fact, state one non-hedged thesis, prove interdependence of the three keywords (what breaks if each is removed), note an adversarial failure mode, and end with an open research question. Returns the final article text as `article`, and sets `status = "completed"`.
+  Reads `planner_output` (keywords, pattern, pattern_reason) and `browser_output` (facts). Prompts the model to apply the chosen recombination pattern, ground every technical claim in a provided fact, state one non-hedged thesis, prove interdependence of the three keywords (what breaks if each is removed), note an adversarial failure mode, and end with an open research question. Returns the final article text as `article`, and sets `status = "completed"`. The Browser's facts are untrusted web content, so they're passed to the model inside a delimited `<untrusted_web_facts>` block with explicit instructions not to follow anything instruction-like found inside it — see `learn-lesson.md` for why.
 
-Each agent module creates its own module-level `OpenAIClient` instance and defines a fixed system prompt describing the agent's role and rules.
+- **`card.py` — `card_node`**
+  Reads the finished `article` and the Browser's `facts` ("grounding material"). Prompts the model to compress them into one JSON card — `hook`, `why_it_matters`, `action`, `action_effort` (`15min | 1hr | weekend`) — meant to nudge the reader toward exactly one concrete, startable next step, grounded only in the material above (no fabricated claims, no "explore more" filler). Sets `status = "completed"`.
+
+Each agent module creates its own module-level `OpenAIClient` instance and defines a fixed system prompt describing the agent's role and rules. Any node can fail a row (setting `status = "failed"` and `error`) instead of crashing the whole run; see `src/graph/orchestrator.py`.
 
 ### Orchestration (`src/graph/orchestrator.py`)
 
-`build_graph()` builds a `StateGraph(States)` and wires the nodes into a fixed, linear flow with no branching or looping:
+`build_graph()` builds a `StateGraph(States)`:
 
 ```
-START -> planner -> browser -> researcher -> END
+START -> planner -> browser -> researcher -> card -> END
 ```
 
-The compiled graph is invoked once per CSV row; LangGraph merges each node's return dict into the shared state before passing it to the next node.
+with a conditional edge after each of the first three nodes: if a node set `status = "failed"`, the graph skips straight to `END` instead of feeding a broken state into the next agent.
 
 ### State (`src/models/states.py`)
 
-`States` is a `TypedDict` shared across every node in the graph:
-
 | field            | type             | set by      | purpose                                                        |
 |------------------|------------------|-------------|-----------------------------------------------------------------|
-| `row`            | `dict[str, Any]` | caller      | the input CSV row (`row_id`, `keywords`)                        |
+| `row`            | `dict[str, Any]` | caller      | the input row (`row_id`, `keywords`)                             |
 | `planner_output` | `dict[str, Any]` | planner     | normalized keywords, rationale, chosen pattern, research questions |
 | `browser_output` | `dict[str, Any]` | browser     | sourced facts per keyword                                       |
 | `article`        | `str`            | researcher  | the final generated article text                                |
-| `status`         | `str`            | every node  | pipeline progress marker (`initialized` -> `planned` -> `browsed` -> `completed`) |
+| `card`           | `dict[str, Any]` | card        | `hook` / `why_it_matters` / `action` / `action_effort`           |
+| `status`         | `str`            | every node  | `initialized` -> `planned` -> `browsed` -> `completed`, or `failed` |
+| `error`          | `str`            | any node    | set alongside `status = "failed"`                                |
+
+### Pipeline runner (`src/pipeline/runner.py`)
+
+Shared by both entry points:
+
+- `run_pipeline_stream(app, row_id, keywords)` streams the graph node-by-node, yielding `(node_name, node_output, elapsed_seconds)` per stage; `run_pipeline(...)` is a blocking wrapper around it for callers (like `main.py`) that just want the final result, optionally observing progress via `on_stage=...`.
+- `persist_result(output_dir, row_id, result)` writes `article_N.md` (+ `card_N.json`, containing `row_id`/`keywords`/`pattern`/`card`, if a card exists) using the next free `N`, so repeat runs never overwrite previous output. Returns `(article_path, N)`.
+- `list_card_library(output_dir)` reads every `card_*.json` in `output_dir` back into `{id, row_id, keywords, pattern, card}` entries (oldest first), used to repopulate the frontend feed with previously generated cards.
 
 ### LLM client (`src/llm/openai_client.py`)
 
-`OpenAIClient` wraps `langchain_openai.ChatOpenAI` (model `gpt-5.4`, Responses API) behind a LangChain `create_agent` call:
+`OpenAIClient` wraps `langchain_openai.ChatOpenAI` (model from `settings.OPENAI_MODEL`, Responses API) behind a LangChain `create_agent` call, cached per `(system_prompt, tools)` pair so the agent graph isn't recompiled on every call:
 
-- `ask(system_prompt, user_prompt, tools=None)` runs one agent turn and returns the final response as plain text, handling both plain-string and Responses-API content-block message shapes.
+- `ask(system_prompt, user_prompt, tools=None)` runs one agent turn and returns the final response as plain text. Wraps failures in `LLMCallError`.
 - `ask_json(system_prompt, user_prompt, tools=None)` calls `ask` and parses the result as strict JSON, stripping accidental ```` ```json ```` fences. Raises `ValueError` if the model output isn't valid JSON.
 
-The Browser agent is the only one that passes `tools=[{"type": "web_search"}]`, giving it live web search; Planner and Researcher only use the model's own reasoning over the data already in state.
-
-The client raises `RuntimeError` at import time if `OPENAI_API_KEY` is not set.
+Only the Browser agent passes `tools=[{"type": "web_search"}]`.
 
 ### Settings (`src/config/settings.py`)
 
-A minimal `Settings` class that loads `.env` and exposes `OPENAI_API_KEY` as `settings.OPENAI_API_KEY`. (Note: `src/llm/openai_client.py` reads `OPENAI_API_KEY` directly via `os.getenv` rather than importing this class.)
+The single source of truth for config: loads `.env` and exposes `settings.OPENAI_API_KEY` / `settings.OPENAI_MODEL`. Raises `RuntimeError` at import time if `OPENAI_API_KEY` is missing.
 
 ## Setup
 
 ### Requirements
 
 - Python 3.x (a `.venv` virtual environment is included in this repo)
-- An OpenAI API key with access to the `gpt-5.4` model and web search tool use
+- An OpenAI API key with access to the configured model and web search tool use
 
 ### Dependencies
 
-There is no `requirements.txt` or `pyproject.toml` in this repo; install the packages the code imports directly:
-
 ```bash
-pip install langgraph langchain langchain-openai python-dotenv
+pip install -r requirements.txt
 ```
 
 ### Environment variables
@@ -83,23 +99,30 @@ Create a `.env` file in the project root:
 OPENAI_API_KEY="sk-..."
 ```
 
-This is loaded by `python-dotenv` in both `src/llm/openai_client.py` and `src/config/settings.py`. Without it, importing `OpenAIClient` raises `RuntimeError: OPENAI_API_KEY is missing. Add it to your .env file.`
+Without it, importing `OpenAIClient` (directly or via `settings`) raises `RuntimeError: OPENAI_API_KEY is missing. Add it to your .env file.`
 
 ## Running
 
 ### Batch run over a CSV (`main.py`)
 
-Reads `keywords.csv` (columns: `row_id`, `keywords`), runs the full graph once per row, and writes each result to `outputs/article_<row_id>.md`:
+Reads `keywords.csv` (columns: `row_id`, `keywords`), runs the full graph once per row with live progress output, and writes each result to `outputs/`:
 
 ```bash
 python main.py
 ```
 
-Example `keywords.csv` row: `1,python` or `3,"openai agent, solidity, payment"`.
+### Web UI: backend + frontend
+
+```bash
+uvicorn src.api.app:app --host 127.0.0.1 --port 8000   # backend
+cd frontend && python -m http.server 5500               # frontend, separate terminal
+```
+
+Open `http://127.0.0.1:5500/`, enter 3 keywords, and scroll. The feed first loads every card already in `outputs/` (`GET /cards/library`), then keeps generating new ones as you scroll via `POST /cards/stream` (Server-Sent Events — live per-stage progress while you wait). Every card has a "read the technical detail" link that fetches its full article from `GET /articles/{id}`. Full build notes: see `tutorial.md`; if the UI ever looks unresponsive, see `troubleshoot.md`.
 
 ### Single ad-hoc run (`main_min.py`)
 
-Runs the graph once against a hardcoded `row` (edit the `state` dict in the file to change the input) and prints the planner output, browser output, and final article to stdout instead of writing a file:
+Runs the graph once against a hardcoded `row` (edit the `state` dict in the file to change the input) and prints planner/browser output and the final article to stdout:
 
 ```bash
 python main_min.py
@@ -115,13 +138,14 @@ python websearch.py
 
 ## Output
 
-Generated articles are written as Markdown files to `outputs/`, one per CSV row, named `article_<row_id>.md`. Each article follows the format produced by the Researcher agent's prompt:
+- **Batch mode**: `outputs/article_<N>.md` (+ `outputs/card_<N>.json` if the card stage succeeded), where `N` auto-increments across runs so nothing gets overwritten. The originating `row_id` is kept as an HTML comment on the article's first line.
+- **API mode**: the same files are written server-side for traceability. `card_<N>.json` (`row_id`, `keywords`, `pattern`, `card`) is returned directly in the HTTP response too, tagged with its `id` (`N`); the full article behind any card is fetchable at `GET /articles/<id>`, and every previously generated card is listable at `GET /cards/library`.
 
-- `Title`
-- `Thesis`
-- `The System`
-- `Interdependence proof` (what breaks if each of the 3 keywords is removed)
-- `Failure mode`
-- `Open question`
+Article format: `Title` / `Thesis` / `The System` / `Interdependence proof` / `Failure mode` / `Open question`, with technical claims inline-cited to Browser-gathered sources.
 
-Technical claims in the article are inline-cited to the sources gathered by the Browser agent (e.g. `[Microsoft Learn: 'IoT Edge supported platforms']`).
+## Further reading
+
+- `tutorial.md` — how the Card agent, FastAPI backend, and frontend were built, file-by-file.
+- `learn-lesson.md` — how prompt injection can attack this pipeline via the Browser → Researcher/Card boundary, and the mitigations in place.
+- `troubleshoot.md` — a worked debugging example (frontend looked unresponsive despite the backend working) and a general checklist for similar issues.
+- `CHANGELOG.md` — dated log of fixes and features.

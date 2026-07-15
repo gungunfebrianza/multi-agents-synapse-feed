@@ -1,0 +1,6 @@
+{
+  "hook": "Prompt-only defenses do not make browser agents safe: Operator still showed 23% prompt-injection susceptibility after mitigations, and weak containment enabled a credential/data-exfiltration-style attack in 24 of 25 retries in one Anthropic setup. The architecture proposed here is to make the browser runtime itself the security boundary with fresh non-persistent BrowserContexts, origin-scoped permissions, supervised handoff on sensitive steps, and injection monitoring.",
+  "why_it_matters": "If you're learning about browser-based LLM agents, this gives you a concrete security model for evaluating whether a web automation system is safe enough to use on untrusted pages.",
+  "action": "Write a 3-sentence design note that lists the four runtime controls from the article\u2014ephemeral BrowserContext per task, origin-scoped permission grants, sensitive-action handoff, and injection-aware runtime monitoring\u2014and decide which one your current browser-agent setup lacks most.",
+  "action_effort": "15min"
+}

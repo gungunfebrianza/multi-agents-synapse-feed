@@ -5,5 +5,6 @@ class States(TypedDict):
     planner_output: dict[str, Any]
     browser_output: dict[str, Any]
     article: str
+    card: dict[str, Any]
     status: str
     error: str

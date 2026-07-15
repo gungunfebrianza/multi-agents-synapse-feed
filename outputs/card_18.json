@@ -1,0 +1,15 @@
+{
+  "row_id": "api-c944f42f",
+  "keywords": [
+    "browser extension",
+    "security",
+    "smart contract"
+  ],
+  "pattern": "Adversarial Recombination",
+  "card": {
+    "hook": "A Web3 safety extension cannot rely on blocking wallet or RPC traffic under MV3, and static domain trust still misses typed-message phishing such as ERC-2612 permit approvals. The buildable control point is a user-triggered, origin-scoped pre-sign check that decodes EIP-712 fields and sends them to simulation and reputation systems.",
+    "why_it_matters": "If you are learning to build browser-extension security for smart contracts, this gives you an architecture that fits current extension-platform limits while still catching approval-style signing risk.",
+    "action": "Write a one-page decision spec that defines exactly three signature outcomes for your extension prototype: pass, warn, block-review, and base each outcome on these fields only: origin permission granted, EIP-712 vs generic signature, ERC-2612 permit detected, spender identified, unlimited-approval signal, simulation result, and address-lookalike flag.",
+    "action_effort": "1hr"
+  }
+}

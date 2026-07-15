@@ -1,0 +1,15 @@
+{
+  "row_id": "api-5f12f0f5",
+  "keywords": [
+    "browser extension",
+    "security",
+    "smart contract"
+  ],
+  "pattern": "Adversarial Recombination",
+  "card": {
+    "hook": "If a wallet-safety extension trusts the wallet\u2019s rendered signature or analyzes only the proxy shell, documented drainer bypasses and ERC-1967 upgradeable contracts can hide the real consequences of a transaction. The design here argues the verdict has to come from independent decode plus pre-confirmation simulation on the effective implementation contract.",
+    "why_it_matters": "If you are learning to build browser-extension security for smart-contract flows, this gives you a concrete rule for where your checks must run and what they cannot trust.",
+    "action": "Write a 3-sentence note after reading the \"Failure mode\" section that states the two named ways this system can fail and the single design constraint they imply for your extension.",
+    "action_effort": "15min"
+  }
+}

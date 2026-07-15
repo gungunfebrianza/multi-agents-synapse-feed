@@ -1,0 +1,15 @@
+{
+  "row_id": "api-7f0960da",
+  "keywords": [
+    "browser extension",
+    "security",
+    "smart contract"
+  ],
+  "pattern": "Adversarial Recombination",
+  "card": {
+    "hook": "A smart-contract warning extension that matters at signing time cannot depend on remote executable updates: Manifest V3 requires packaged code, while the main theft pattern is approval and typed-signature abuse rather than key theft. That creates a hard design constraint: local decoding must cover calldata, EIP-712 permits, and ERC-1967 proxy resolution well enough to classify risk before signature.",
+    "why_it_matters": "If you are learning to build browser-extension security for smart contracts, this gives you the minimum technical scope for a useful signer-side classifier instead of a generic transaction decoder.",
+    "action": "Write a 3-bullet design note that maps one local MV3 check to each signing surface named in the article: calldata selector decoding, EIP-712 parsing of chainId and verifyingContract, and ERC-1967 implementation-slot lookup.",
+    "action_effort": "15min"
+  }
+}

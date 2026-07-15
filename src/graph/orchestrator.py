@@ -1,11 +1,12 @@
 from langgraph.graph import END, START, StateGraph
 
 # This code builds your LangGraph workflow.
-# START → planner → browser → researcher → END
-# (planner/browser can short-circuit straight to END on failure — see
+# START → planner → browser → researcher → card → END
+# (any node can short-circuit straight to END on failure — see
 # _route_on_status below)
-#This imports your three agent functions
+#This imports your four agent functions
 from src.agents.browser import browser_node
+from src.agents.card import card_node
 from src.agents.planner import planner_node
 from src.agents.researcher import researcher_node
 
@@ -32,6 +33,7 @@ def build_graph():
     graph.add_node("planner", planner_node)
     graph.add_node("browser", browser_node)
     graph.add_node("researcher", researcher_node)
+    graph.add_node("card", card_node)
 
     # Edges are the arrows between agents.
     # When the graph starts, run planner first.
@@ -44,8 +46,12 @@ def build_graph():
     graph.add_conditional_edges(
         "browser", _route_on_status, {"continue": "researcher", "end": END}
     )
-    # After researcher finishes (success or failure), stop the workflow.
-    graph.add_edge("researcher", END)
+    # After researcher finishes, run card — unless researcher failed.
+    graph.add_conditional_edges(
+        "researcher", _route_on_status, {"continue": "card", "end": END}
+    )
+    # After card finishes (success or failure), stop the workflow.
+    graph.add_edge("card", END)
 
     # This converts your graph definition into a runnable app.
     return graph.compile()

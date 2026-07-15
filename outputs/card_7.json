@@ -1,0 +1,6 @@
+{
+  "hook": "A learned index can collapse under insertions, but a two-tier mutable design that keeps linear data in a learned layer and routes conflict-heavy ranges into ART changes the problem from global mutation to localized mutation. The open question is where to place the migration boundary when update-time predictions are noisy, because wrong routing either leaves hot ranges in the learned tier or wastes the conflict tier.",
+  "why_it_matters": "If you are studying mutable data structures and algorithms, this gives you a concrete way to think about combining concurrency safety with update-aware performance instead of treating them as separate concerns.",
+  "action": "Write a one-page note with three bullet points, one each for ALT-index, Safe C++, and The Predicted-Updates Dynamic Model, stating the exact role each plays in the proposed design and ending with a single sentence that defines your tentative migration-boundary rule under prediction error.",
+  "action_effort": "15min"
+}

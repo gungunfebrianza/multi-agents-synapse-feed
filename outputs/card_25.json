@@ -1,0 +1,15 @@
+{
+  "row_id": "api-f03a4daf",
+  "keywords": [
+    "data structure",
+    "security",
+    "python"
+  ],
+  "pattern": "Constraint Collision",
+  "card": {
+    "hook": "If you let untrusted YAML, pickle, jsonpickle, or affected protobuf-python inputs through, the system is already compromised before any trie exists. In Python 3.13 free-threaded deployments, the safer shape is parse once into pure data, compile once into an immutable trie, then share it for read-mostly access instead of relying on mutable built-in containers with internal locks.",
+    "why_it_matters": "This gives you a concrete pattern to study for building Python data structures that preserve a security boundary while still supporting efficient prefix lookup and concurrent reads.",
+    "action": "Write a short design note with two columns: approved ingestion paths (JSON/XML, YAML with Loader=yaml.SafeLoader, patched protobuf-python only) and rejected paths (pickle load/loads, PyYAML load on user-controlled input, jsonpickle, affected protobuf-python versions), then end it with one decision sentence on whether your index should target an immutable trie artifact.",
+    "action_effort": "15min"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "row_id": "api-fdf5aedf",
+  "keywords": [
+    "browser extension",
+    "security",
+    "smart contract"
+  ],
+  "pattern": "Adversarial Recombination",
+  "card": {
+    "hook": "An MV3 security extension can still observe wallet signing requests, but for most consumer Chrome extensions it cannot rely on arbitrary in-flight blocking, while the approval surface now spans EIP-712 signatures, EIP-2718/EIP-1559 transactions, and ERC-4337 UserOperations. That makes a single approval-time verdict a product and architecture problem, not just a decoding problem.",
+    "why_it_matters": "If you're learning to build browser-extension security tooling for smart-contract workflows, this defines the minimum architecture you need to inspect modern Ethereum approvals under real MV3 and store-policy constraints.",
+    "action": "Write a one-page decision note that lists the exact signing surfaces your extension will support first\u2014eth_sendTransaction, personal_sign, eth_signTypedData, and ERC-4337/ERC-7769 UserOperation-related flows\u2014and for each one record whether your MV3 design will observe, decode, or block it.",
+    "action_effort": "1hr"
+  }
+}

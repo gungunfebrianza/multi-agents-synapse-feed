@@ -1,0 +1,6 @@
+{
+  "hook": "A mutable learned index can lose its query guarantees under deletions: prior dynamic PGM-style approaches can degrade to worst-case range-query time O(N + \u03a3_i(\u03b5 + log |h_i|)), while the 2025 dynamic learned-index result keeps worst-case updates at O(log^2 n + \u03b5). At the same time, write-local workloads make coarse locking collapse, which is why the proposed design pairs deletion-safe indexing with delta chains and batch-parallel commits.",
+  "why_it_matters": "If you are learning how to design mutable data structures and algorithms, this gives you a concrete target: separate read-optimized structure from update handling so deletions and hotspot writes do not dominate behavior.",
+  "action": "Write a one-page design note with three labeled boxes\u2014\"base learned index,\" \"per-segment delta chains,\" and \"batch compaction\"\u2014and under each box list one invariant and one failure mode taken from the article.",
+  "action_effort": "15min"
+}

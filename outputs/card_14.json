@@ -1,0 +1,15 @@
+{
+  "row_id": "api-542b7094",
+  "keywords": [
+    "rust",
+    "webassembly",
+    "edge computing"
+  ],
+  "pattern": "Constraint Collision",
+  "card": {
+    "hook": "A Rust Wasm edge service that keeps default Cargo release settings is more likely to hit the exact problems edge platforms expose: Cloudflare says Wasm Workers are typically larger than equivalent JavaScript Workers, larger Workers may start more slowly, and Workers run with a 128 MB memory limit. At the same time, treating WASI as broadly available is unsafe here, because Cloudflare documents its WASI support as experimental with only some syscalls implemented.",
+    "why_it_matters": "If you are learning Rust, WebAssembly, and edge computing, this gives you a concrete checklist for evaluating whether a Wasm artifact is actually shaped for hosted edge limits rather than just compiled successfully.",
+    "action": "Open The Cargo Book section \"Profiles\" and write 3 sentences of notes on how `strip`, `lto`, `codegen-units`, and `panic = 'abort'` would change a Rust build intended for Cloudflare Workers.",
+    "action_effort": "15min"
+  }
+}

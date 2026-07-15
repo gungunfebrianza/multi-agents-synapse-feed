@@ -1,0 +1,15 @@
+{
+  "row_id": "api-267f94d8",
+  "keywords": [
+    "browser extension",
+    "security",
+    "smart contract"
+  ],
+  "pattern": "Adversarial Recombination",
+  "card": {
+    "hook": "A browser wallet firewall is only meaningful if it injects on demand with activeTab or explicit host permission and forces every privileged signing request through the content-script message boundary. The moment it falls back to broad host access or opaque raw-sign flows when EIP-712 or permit exists, it recreates the same attack surface it claims to reduce.",
+    "why_it_matters": "If you are learning how browser extensions and smart-contract signing fit together, this gives you a concrete architecture for comparing safer transaction mediation against the permanently injected wallet pattern.",
+    "action": "Write a one-page decision note with two columns, \"allow\" and \"block,\" listing the exact conditions from the article for approving a signing path: activeTab or explicit host permission present, capability confirmed with wallet_getCapabilities, prefer wallet_sendCalls when bundled calls are supported, prefer ERC-2612 permit over approve, refuse raw-sign when an EIP-712 path exists, and check for address-poisoning patterns before showing approval.",
+    "action_effort": "15min"
+  }
+}

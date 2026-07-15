@@ -1,0 +1,15 @@
+{
+  "row_id": "api-8637d0fe",
+  "keywords": [
+    "browser extension",
+    "security",
+    "smart contract"
+  ],
+  "pattern": "Adversarial Recombination",
+  "card": {
+    "hook": "A browser extension can watch wallet-facing flows, but MV3 and content-script permission limits mean it cannot assume universal blocking or visibility. That pushes the core pre-signing verdict onto contract readability, proxy resolution, EIP-712 interpretation, and simulation rather than page-level trust signals alone.",
+    "why_it_matters": "If you are learning to build secure browser-extension tooling around smart contracts, this gives you a concrete architecture boundary: detection in the page, enforcement at signing, and explicit handling of privacy tradeoffs in simulation.",
+    "action": "Write a 3-step verdict sketch for a single signing request that lists: (1) how you would check verified ABI and proxy-to-implementation resolution, (2) how you would classify an EIP-712 signature or transaction simulation result, and (3) the exact condition that triggers block vs warn.",
+    "action_effort": "15min"
+  }
+}

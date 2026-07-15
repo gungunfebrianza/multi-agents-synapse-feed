@@ -1,0 +1,6 @@
+{
+  "hook": "Flat long-horizon agent planning is still brittle in current benchmarks, while Python agent stacks already expose handoffs, sessions, persistence, subgraphs, and tracing. The unresolved design question is whether a recursively self-similar plan-act-verify-handoff graph reduces horizon failures without amplifying multi-agent coordination failures.",
+  "why_it_matters": "If you are learning to build Python LLM agents, this gives you a concrete architecture to test instead of assuming a single planner should own an entire long task.",
+  "action": "Write a 1-page design note that defines one fractal agent node in Python with exactly four interfaces\u2014plan, act, verify, and handoff\u2014and includes one explicit rule for when a node must delegate to a child versus finish locally.",
+  "action_effort": "1hr"
+}

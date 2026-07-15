@@ -2,6 +2,68 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased] - 2026-07-15 (5)
+
+### Added
+
+- **"Read the technical detail" link on every card.** Each card now links
+  back to the full article it was distilled from. `persist_result`
+  (`src/pipeline/runner.py`) now returns the article's numeric id
+  alongside its path, and writes `card_N.json` with enough context
+  (`row_id`, `keywords`, `pattern`, `card`) to stand alone. New
+  `GET /articles/{id}` endpoint (`src/api/app.py`) returns the raw article
+  text for that id; the frontend's new `card-detail-button` opens it in a
+  glass-panel modal (`frontend/index.html`, `frontend/app.js`,
+  `frontend/style.css`) instead of navigating away from the feed.
+- **Existing cards from `outputs/` now appear in the feed.** New
+  `GET /cards/library` endpoint lists every `outputs/card_*.json` found on
+  disk (oldest first) via `list_card_library` (`src/pipeline/runner.py`),
+  handling both the current file shape and the older one written before
+  this feature existed (a bare card object with no `row_id`/`keywords`/
+  `pattern` wrapper — those render with a "no keywords on file" fallback).
+  `frontend/app.js`'s `startFeed` now calls this endpoint first and
+  renders the whole library before starting live generation for the
+  keywords just entered, so the feed opens with real content immediately
+  instead of a blank scroll. Verified end-to-end: library listing,
+  id-linked article fetch (200 for a real id, 404 for a missing one), and
+  a fresh streamed card carrying its own `id` were all tested against a
+  running backend.
+
+
+### Fixed
+
+- **Frontend appeared completely unresponsive after clicking "start
+  scrolling."** `frontend/style.css` set an explicit `display: flex` on
+  both `.setup-screen` and `.feed-screen`, which silently overrode the
+  browser's default `[hidden] { display: none }` behavior (author CSS
+  beats the user-agent stylesheet regardless of selector specificity).
+  Toggling `.hidden` in `app.js` was therefore a no-op — the request to
+  the backend fired and completed correctly (confirmed by generated
+  `card_N.json` files), but the screen never visibly changed. Fixed with
+  one rule: `[hidden] { display: none !important; }`. Full diagnosis in
+  `troubleshoot.md`.
+
+### Added
+
+- **Real per-stage progress via Server-Sent Events.** New
+  `POST /cards/stream` endpoint (`src/api/app.py`) streams a `stage` event
+  the moment each graph node (planner/browser/researcher/card) finishes,
+  instead of one blocking ~30-90s response. Backed by a new
+  `run_pipeline_stream` generator in `src/pipeline/runner.py`; the
+  existing blocking `run_pipeline` (used by `main.py`) is now a thin
+  wrapper around it, so CLI behavior is unchanged. The original
+  `POST /cards` endpoint is kept for simple `curl`/script use.
+- **Cute, live loading state.** The frontend's loading card now shows an
+  animated pulsing/morphing "orb," a real stage label driven by the SSE
+  events above (e.g. "Digging through the web for receipts…"), a rotating
+  line of playful flavor text so the ~30-90s wait has some personality,
+  and a live elapsed-seconds counter — replacing the previous static
+  skeleton-line placeholder. (`frontend/app.js`, `frontend/style.css`,
+  `frontend/index.html`)
+- `troubleshoot.md` — root-cause writeup of the frontend bug above, how it
+  was diagnosed, and a general checklist for "backend works, frontend
+  doesn't visibly respond" issues.
+
 ## [Unreleased] - 2026-07-15
 
 ### Fixed
@@ -101,3 +163,48 @@ All notable changes to this project are documented in this file.
   completes (Planning / Browsing / Researching), a per-row failure message
   if a stage fails, and a final summary line (`N succeeded, N failed,
   total time`). (`main.py`)
+
+## [Unreleased] - 2026-07-15 (3)
+
+### Added
+
+- **Card agent (`src/agents/card.py`, new `card` graph node).** Converts
+  the Researcher's article + Browser's facts into a single JSON card —
+  `hook`, `why_it_matters`, `action`, `action_effort` (`15min | 1hr |
+  weekend`) — following the exact editorial rules specified (checkable
+  hook, no filler, second-person `why_it_matters` honestly tied to a
+  reader project or a learning-goal fallback, exactly one startable
+  action, no fabrication, no hype/emoji). Wired in as
+  `researcher -> card -> END` in `src/graph/orchestrator.py`; `States`
+  gained a `card` field. Reuses the same untrusted-data delimiting as the
+  Researcher fix for the facts it consumes.
+- **Shared pipeline runner (`src/pipeline/runner.py`).** Extracted the
+  "stream the graph and merge state" logic and the output-persistence
+  logic out of `main.py` so both the CLI and the new API call the same
+  code (`run_pipeline`, `persist_result`). `persist_result` is now
+  thread-locked to stay collision-safe under concurrent API requests.
+  `main.py` was refactored to use this module; behavior for CSV batch runs
+  is unchanged other than also writing `card_N.json` alongside each
+  `article_N.md` when a card was generated.
+- **FastAPI backend (`src/api/app.py`).** `POST /cards` takes exactly 3
+  client-supplied keywords (no more reading from `keywords.csv` for this
+  path), runs the full graph for that one request, persists the result,
+  and returns the card as JSON (HTTP 502 with the error message on
+  pipeline failure). `GET /health` for liveness. CORS wide open for local
+  frontend development. Verified end-to-end with a live request (see
+  `outputs/article_6.md` / `outputs/card_6.json`, generated during
+  testing).
+- **Doomscroll frontend (`frontend/index.html`, `style.css`, `app.js`).**
+  Static, no build step. Setup screen collects 3 keywords (category
+  picker shows research/coding/finance/business, only "research" enabled
+  per the current scope). Feed screen renders cards fetched from the
+  backend with scroll-snap, a one-card-ahead prefetch so scrolling doesn't
+  feel like "tap and wait," a skeleton loading card, and a retry-capable
+  error card. Dark, glassmorphism, `Space Grotesk` / `JetBrains Mono`
+  theme.
+- `requirements.txt` — pinned versions for all now-explicit dependencies
+  (`langgraph`, `langchain`, `langchain-openai`, `python-dotenv`,
+  `fastapi`, `uvicorn[standard]`, `pydantic`).
+- `tutorial.md` — file-by-file walkthrough of how the card agent, backend,
+  and frontend were built, and a "where to look when tracing a change"
+  table.

@@ -1,0 +1,15 @@
+{
+  "row_id": "api-3bfd653a",
+  "keywords": [
+    "data structure",
+    "security",
+    "python"
+  ],
+  "pattern": "Constraint Collision",
+  "card": {
+    "hook": "Free-threaded Python raises the cost of shared mutable state at the same time that Python and PyYAML both document object reconstruction from untrusted serialized data as unsafe. The article\u2019s claim is that security state should live in immutable HAMT-style snapshots committed to a Merkle layer, with caches treated as derived acceleration only, not policy-bearing state.",
+    "why_it_matters": "If you work on Python data structures and security, this gives you a concrete pattern for learning how to make concurrent state tamper-evident without relying on pickle, unsafe yaml.load, or mutable caches for correctness.",
+    "action": "Read the \"Failure mode\" section and write 3 sentences of notes: one on how a mutable shared cache can bypass security policy, one on why pickle or yaml.load bypasses authenticated state, and one decision on whether your next Python stateful component should forbid those serialization paths.",
+    "action_effort": "15min"
+  }
+}

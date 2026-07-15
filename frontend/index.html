@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>synapse feed</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="noise-overlay" aria-hidden="true"></div>
+
+  <!-- Setup screen: keyword + category input -->
+  <main id="setup-screen" class="setup-screen">
+    <div class="setup-card">
+      <p class="eyebrow">one-time, ai-generated</p>
+      <h1 class="setup-title">synapse feed</h1>
+      <p class="setup-sub">
+        Three keywords in. An endless feed of grounded, checkable ideas out
+        &mdash; each one generated fresh, never repeated, never curated by a
+        human.
+      </p>
+
+      <div class="category-row" role="group" aria-label="Feed category">
+        <button type="button" class="category-pill active" data-category="research">
+          research
+        </button>
+        <button type="button" class="category-pill" disabled title="Coming soon">
+          coding <span class="soon">soon</span>
+        </button>
+        <button type="button" class="category-pill" disabled title="Coming soon">
+          finance <span class="soon">soon</span>
+        </button>
+        <button type="button" class="category-pill" disabled title="Coming soon">
+          business <span class="soon">soon</span>
+        </button>
+      </div>
+
+      <form id="keyword-form" class="keyword-form" autocomplete="off">
+        <div class="keyword-field">
+          <label for="keyword-1">keyword 1</label>
+          <input id="keyword-1" name="keyword-1" type="text" placeholder="e.g. zero-knowledge proof" required />
+        </div>
+        <div class="keyword-field">
+          <label for="keyword-2">keyword 2</label>
+          <input id="keyword-2" name="keyword-2" type="text" placeholder="e.g. distributed systems" required />
+        </div>
+        <div class="keyword-field">
+          <label for="keyword-3">keyword 3</label>
+          <input id="keyword-3" name="keyword-3" type="text" placeholder="e.g. consensus protocols" required />
+        </div>
+
+        <p id="setup-error" class="setup-error" hidden></p>
+
+        <button type="submit" class="start-button">start scrolling</button>
+      </form>
+
+      <p class="setup-footnote">
+        Each card takes roughly 30&ndash;90s to generate &mdash; it's doing
+        live research, not pulling from a cache.
+      </p>
+    </div>
+  </main>
+
+  <!-- Feed screen: doomscroll card stream -->
+  <div id="feed-screen" class="feed-screen" hidden>
+    <header class="feed-header">
+      <span class="feed-header-title">synapse feed</span>
+      <span id="feed-keywords" class="feed-header-keywords"></span>
+      <button id="restart-button" class="restart-button" type="button">restart</button>
+    </header>
+    <div id="feed" class="feed"></div>
+  </div>
+
+  <template id="card-template">
+    <section class="card">
+      <div class="card-glow" aria-hidden="true"></div>
+      <div class="card-meta">
+        <span class="card-pattern"></span>
+        <span class="card-effort"></span>
+      </div>
+      <p class="card-hook"></p>
+      <p class="card-why"></p>
+      <div class="card-action">
+        <span class="card-action-label">next action</span>
+        <p class="card-action-text"></p>
+      </div>
+      <div class="card-footer">
+        <span class="card-keywords"></span>
+        <button type="button" class="card-detail-button">read the technical detail</button>
+      </div>
+    </section>
+  </template>
+
+  <template id="loading-card-template">
+    <section class="card card-loading">
+      <div class="card-glow" aria-hidden="true"></div>
+      <div class="orb-wrap" aria-hidden="true">
+        <div class="orb"></div>
+        <div class="orb-ring"></div>
+      </div>
+      <p class="loading-stage">Warming up the agents&hellip;</p>
+      <p class="loading-flavor"></p>
+      <p class="loading-elapsed"><span class="loading-elapsed-value">0</span>s elapsed</p>
+    </section>
+  </template>
+
+  <template id="error-card-template">
+    <section class="card card-error">
+      <p class="card-error-title">this card failed to generate</p>
+      <p class="card-error-detail"></p>
+      <button type="button" class="retry-button">retry</button>
+    </section>
+  </template>
+
+  <!-- Technical-detail modal: shows the full article behind a card -->
+  <div id="detail-modal" class="detail-modal" hidden>
+    <div class="detail-modal-backdrop" data-close="true"></div>
+    <div class="detail-modal-panel" role="dialog" aria-modal="true" aria-label="Technical detail">
+      <div class="detail-modal-header">
+        <span class="detail-modal-title">technical detail</span>
+        <button type="button" class="detail-modal-close" data-close="true" aria-label="Close">&times;</button>
+      </div>
+      <div class="detail-modal-body"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

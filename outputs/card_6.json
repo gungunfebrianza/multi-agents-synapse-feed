@@ -1,0 +1,6 @@
+{
+  "hook": "If proof verification is the real bottleneck, consensus cannot treat finality as independent of the proof pipeline. In the cited zkVerify-style setup, aggregation domains cap at 128 proofs with 16 pending aggregations, and when queues fill, CannotAggregate or DomainStorageFull halts new ingress until publication clears.",
+  "why_it_matters": "If you are learning how zero-knowledge proof changes distributed consensus, this gives you a concrete lens for analyzing finality as a queueing and backpressure problem rather than just a voting rule.",
+  "action": "Write a 10-line pseudocode state machine for checkpoint finality with three states\u2014voted, proving, finalized\u2014and one transition guard that blocks new checkpoints when aggregationSize or queueSize is saturated per zkVerify domain limits.",
+  "action_effort": "15min"
+}

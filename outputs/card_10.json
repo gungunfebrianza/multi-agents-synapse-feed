@@ -1,0 +1,6 @@
+{
+  "hook": "The strongest pattern across the material is that mutable indexes should treat each mutation as an incremental maintenance step, not as a trigger for full rebuilds. The open question is where the extra cost of synchronization, logging, and resize metadata starts to outweigh the savings from proportional-to-change updates.",
+  "why_it_matters": "If you are learning mutable data structures and algorithms, this gives you a concrete design test: prefer structures and update logic that preserve invariants through localized maintenance rather than static recomputation.",
+  "action": "Write a one-page note with three columns labeled data structure, mutable, and algorithm, and under each column list exactly two mechanisms named in the article that a mutable index engine would need to avoid rebuilds.",
+  "action_effort": "15min"
+}

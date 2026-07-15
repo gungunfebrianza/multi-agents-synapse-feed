@@ -1,0 +1,15 @@
+{
+  "row_id": "api-f224d5af",
+  "keywords": [
+    "browser extension",
+    "security",
+    "smart contract"
+  ],
+  "pattern": "Adversarial Recombination",
+  "card": {
+    "hook": "A wallet-safety extension cannot be both always-on and minimally privileged under MV3: the buildable pattern is to request host access only when a signing flow starts, then classify whether the request is a plain transaction, EIP-712 typed message, or ERC-2612-style approval. That matters because disconnecting a dapp does not revoke token approvals, and EIP-712 readability still does not provide replay protection.",
+    "why_it_matters": "If you are learning to build secure browser extensions around smart-contract signing, this gives you a concrete architecture for treating browser permissions and on-chain authority as one security boundary.",
+    "action": "Write a 3-state decision table in a local note or JSON file with rows for plain transaction, EIP-712 typed message, and ERC-2612 permit-style approval, and columns for required temporary host access, replay-risk warning, and persistent-approval warning.",
+    "action_effort": "15min"
+  }
+}

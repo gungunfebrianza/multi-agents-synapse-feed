@@ -1,0 +1,6 @@
+{
+  "hook": "A fast mutable mini-page index is not enough on its own: if rebuild and snapshot timing are not controlled by an explicit dynamization policy, query cost can drift upward even while concurrency and snapshot correctness still hold. The open question is how an online controller should pick mini-page rebuild and snapshot points in a Bf-Tree-style index as read/write ratios change.",
+  "why_it_matters": "If you are learning about mutable data structures and algorithms, this gives you a concrete way to reason about when copy-based updates should trigger rebuilds versus snapshots under a query-cost bound.",
+  "action": "Write a one-page note with three bullets labeled \"rebuild now\", \"keep buffering writes\", and \"materialize snapshot\", and under each bullet list the exact signals named in the article that would justify that decision: buffered mini-page growth, changing read/write ratio, build cost, cumulative query cost, and a query-cost cap k.",
+  "action_effort": "15min"
+}

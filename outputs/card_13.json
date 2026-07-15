@@ -1,0 +1,6 @@
+{
+  "hook": "Per-task browser isolation is not enough if the agent treats a page as a flat surface: a malicious instruction in an iframe or popup can still steer actions before supervision triggers. The grounding material argues the control loop has to bind prompt monitoring and takeover/watch-mode decisions to the actual browsing-context tree from `browsingContext.getTree`.",
+  "why_it_matters": "If you are learning to build browser-based LLM agents securely, this gives you a concrete way to turn browser primitives into enforceable trust boundaries instead of relying on prompts alone.",
+  "action": "Sketch a trust-policy table for your runtime with one row each for top-level tab, same-origin iframe, cross-site iframe, popup, credentials entry, and download, and assign exactly one decision per row: allow, require watch mode, require takeover mode, or block.",
+  "action_effort": "15min"
+}
