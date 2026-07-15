@@ -1,5 +1,5 @@
 # This imports your custom class that talks to OpenAI/LangChain.
-from src.llm.openai_client import OpenAIClient
+from src.llm.openai_client import LLMCallError, OpenAIClient
 
 # This creates one reusable OpenAI client.
 openai_client = OpenAIClient()
@@ -20,6 +20,9 @@ Rules:
 - Do not include markdown.
 - Do not include explanations outside JSON.
 - The JSON must match the requested structure exactly.
+- Every placeholder in the JSON structure below must be replaced with the
+  real keyword text. Never output the literal placeholder strings
+  themselves (e.g. do not output "<keyword_1>").
 """
 
 # This is a LangGraph node.
@@ -37,7 +40,7 @@ row_id: {row_id}
 keywords: {keywords}
 
 TASK:
-1. NORMALIZE to exactly 3 load-bearing keywords [A, B, C]:
+1. NORMALIZE to exactly 3 load-bearing keywords:
    - If 3 keywords given, use as-is.
    - If 2 given, add ONE adjacent keyword that creates productive tension.
    - If 1 given, add TWO keywords from different domains to force cross-domain recombination.
@@ -61,29 +64,45 @@ TASK:
 OUTPUT JSON ONLY:
 {{
   "row_id": "{row_id}",
-  "keywords": ["A", "B", "C"],
-  "keyword_rationale": {{
-    "A": "...",
-    "B": "...",
-    "C": "..."
-  }},
+  "keywords": ["<keyword_1>", "<keyword_2>", "<keyword_3>"],
+  "keyword_rationale": [
+    {{"keyword": "<keyword_1>", "rationale": "..."}},
+    {{"keyword": "<keyword_2>", "rationale": "..."}},
+    {{"keyword": "<keyword_3>", "rationale": "..."}}
+  ],
   "pattern": "...",
   "pattern_reason": "...",
-  "research_questions": {{
-    "A": "...",
-    "B": "...",
-    "C": "..."
-  }}
+  "research_questions": [
+    {{"keyword": "<keyword_1>", "question": "..."}},
+    {{"keyword": "<keyword_2>", "question": "..."}},
+    {{"keyword": "<keyword_3>", "question": "..."}}
+  ]
 }}
 """
     # This sends the prompt to the OpenAI client and gets back JSON.
     # This sends both prompts to the model.
-    planner_output = openai_client.ask_json(
-        system_prompt=PLANNER_SYSTEM_PROMPT,
-        user_prompt=user_prompt,
-    )
+    try:
+        planner_output = openai_client.ask_json(
+            system_prompt=PLANNER_SYSTEM_PROMPT,
+            user_prompt=user_prompt,
+        )
+
+        normalized_keywords = planner_output.get("keywords")
+        if not isinstance(normalized_keywords, list) or len(normalized_keywords) != 3:
+            raise ValueError(
+                "Planner must return exactly 3 normalized keywords, got: "
+                f"{normalized_keywords!r}"
+            )
+    except (LLMCallError, ValueError) as error:
+        # Isolate the failure to this row instead of crashing the whole batch.
+        return {
+            "planner_output": {},
+            "status": "failed",
+            "error": f"planner_node: {error}",
+        }
 
     return {
         "planner_output": planner_output,
         "status": "planned",
+        "error": "",
     }

@@ -1,26 +1,44 @@
 import json
-import os
 import re
 from typing import Any
 
-from dotenv import load_dotenv
 from langchain.agents import create_agent
 from langchain_openai import ChatOpenAI
 
-load_dotenv()
+from src.config.settings import settings
 
-if not os.getenv("OPENAI_API_KEY"):
-    raise RuntimeError("OPENAI_API_KEY is missing. Add it to your .env file.")
+
+class LLMCallError(Exception):
+    """Raised when a call to the underlying LLM/agent fails (network, API, timeout, etc.)."""
 
 
 class OpenAIClient:
-    def __init__(self, model: str = "gpt-5.4"):
+    def __init__(self, model: str | None = None):
         # Store the model inside this class so other methods can use it.
         self.llm = ChatOpenAI(
-            model=model,
+            model=model or settings.OPENAI_MODEL,
             # Use OpenAI's newer Responses API mode.
             use_responses_api=True,
         )
+
+        # Agent graphs are expensive to compile. Every call site always uses
+        # the same (system_prompt, tools) pair, so cache and reuse them
+        # instead of rebuilding on every ask()/ask_json() call.
+        self._agent_cache: dict[tuple[str, tuple[str, ...]], Any] = {}
+
+    def _get_agent(self, system_prompt: str, tools: list[Any] | None) -> Any:
+        tools = tools or []
+        tool_signature = tuple(json.dumps(tool, sort_keys=True) for tool in tools)
+        cache_key = (system_prompt, tool_signature)
+
+        if cache_key not in self._agent_cache:
+            self._agent_cache[cache_key] = create_agent(
+                model=self.llm,
+                tools=tools,
+                system_prompt=system_prompt,
+            )
+
+        return self._agent_cache[cache_key]
 
     # This method sends a prompt to the agent and returns text.
     def ask(
@@ -32,25 +50,24 @@ class OpenAIClient:
         """
         Run one agent call and return the final text response.
         """
-        # This creates an agent.
-        agent = create_agent(
-            model=self.llm,
-            # If tools is provided, use it. If tools is None, use empty list [].
-            tools=tools or [],
-            system_prompt=system_prompt,
-        )
+        agent = self._get_agent(system_prompt, tools)
 
-        # This runs the agent.
-        result = agent.invoke(
-            {
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": user_prompt,
-                    }
-                ]
-            }
-        )
+        try:
+            result = agent.invoke(
+                {
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": user_prompt,
+                        }
+                    ]
+                }
+            )
+        except Exception as error:
+            # Network errors, rate limits, auth failures, etc. all land here.
+            # Surface them as one clear, catchable type instead of letting an
+            # arbitrary provider/library exception crash the whole pipeline.
+            raise LLMCallError(f"LLM call failed: {error}") from error
 
         # the last message is the final answer from the AI.
         final_message = result["messages"][-1]
@@ -126,4 +143,3 @@ class OpenAIClient:
             raise ValueError(
                 f"Model did not return valid JSON.\n\nRaw output:\n{cleaned}"
             ) from error
-        

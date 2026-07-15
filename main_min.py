@@ -12,10 +12,15 @@ def main():
         "browser_output": {},
         "article": "",
         "status": "initialized",
+        "error": "",
     }
 
     app = build_graph()
     result = app.invoke(state)
+
+    if result.get("status") == "failed":
+        print(f"FAILED: {result.get('error')}")
+        return
 
     print("\n=== PLANNER OUTPUT ===")
     print(result["planner_output"])

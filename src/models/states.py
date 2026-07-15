@@ -6,3 +6,4 @@ class States(TypedDict):
     browser_output: dict[str, Any]
     article: str
     status: str
+    error: str
