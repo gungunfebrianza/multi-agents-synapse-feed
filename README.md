@@ -145,6 +145,7 @@ Article format: `Title` / `Thesis` / `The System` / `Interdependence proof` / `F
 
 ## Further reading
 
+- `docs.md` — a from-scratch, beginner-friendly tutorial for building this backend step by step: planning, directory structure, build order, and full AI/API design explanations, ending with the exact API contract a frontend needs (backend only — no frontend build steps).
 - `tutorial.md` — how the Card agent, FastAPI backend, and frontend were built, file-by-file.
 - `learn-lesson.md` — how prompt injection can attack this pipeline via the Browser → Researcher/Card boundary, and the mitigations in place.
 - `troubleshoot.md` — a worked debugging example (frontend looked unresponsive despite the backend working) and a general checklist for similar issues.
